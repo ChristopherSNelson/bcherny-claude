@@ -59,6 +59,18 @@ You can spawn these as subagents when appropriate. Limit to 1 concurrent subagen
 
 Pre-allowed permissions for common safe commands so they don't prompt for approval each time. Customize this for your stack — typical allows include: `git`, `conda`, `mamba`, `pip`, `python`, `pytest`, `ruff`, `mypy`, `nextflow`, `snakemake`, `docker`, `colima`, `samtools`, `bcftools`, `bedtools`, `gh` (GitHub CLI). Also includes a PostToolUse hook that auto-formats code after Write/Edit operations.
 
+### Skills (`.claude/skills/`)
+
+| Skill | What it does |
+|---|---|
+| `mcp-maker` | Scaffolds a new FastMCP server from a spec, registers it with Claude Code, and runs a smoke test. Use when a task needs structured access to an external API. See `.claude/skills/mcp-maker/SKILL.md`. |
+
+Add more skills over time for recurring workflows (e.g., `nf-pipeline-scaffold`, `eda-anndata`, `deseq2-from-counts`).
+
+### MCP servers (`.claude/mcp-servers/`)
+
+Project-local MCP servers created by the `mcp-maker` skill live here. Each is a self-contained Python file using FastMCP. Disposable servers can be deleted after a project; reusable ones should be committed to git.
+
 ### Adapting for new projects
 
 When setting up a new project, consider which commands and agents to keep, remove, or add. Domain-specific additions to consider:
@@ -148,6 +160,26 @@ Do not report a task as complete unless verification passes. If tests fail, fix 
 
 ---
 
+## MCP server policy *[AGENT RULES]*
+
+Do not assume any MCP servers are preloaded. This setup uses on-demand MCP creation to avoid paying context-window tax for unused tool descriptions.
+
+- **No preloaded MCPs by default**. The only exception is PubMed if the user has installed it — it's low-overhead and useful mid-session for checking published methods.
+- **When an MCP would help**: If a task would benefit from structured access to an external API (e.g., Ensembl REST, UniProt, a LIMS, GEO/SRA), suggest creating one using the `mcp-maker` skill rather than telling the user to go find a premade integration.
+- **Use the `mcp-maker` skill** (located at `.claude/skills/mcp-maker/SKILL.md`) to scaffold a FastMCP server, register it with Claude Code, and test it — all in one workflow.
+- **Lifecycle**: MCPs created during a project should be committed to `.claude/mcp-servers/` if they'll be reused, or treated as disposable if they were session-specific. Suggest cleanup when a project wraps up.
+- **Credentials**: Never hardcode API keys in MCP server source. Use environment variables loaded from `~/.env` or project `.env` (which must be in `.gitignore`).
+- **Transport**: Default to `stdio` for local MCPs. Only use SSE/HTTP if the server needs to be shared or accessed remotely.
+
+## MCP server policy *[OPERATOR NOTES]*
+
+- To install the Anthropic life sciences marketplace: `/plugin marketplace add anthropics/life-sciences`
+- Available official plugins: `pubmed`, `biorender`, `synapse`, `10x-genomics`, `wiley-scholar-gateway`, `nextflow-development`, `single-cell-rna-qc`, `scvi-tools`
+- Install individually: `/plugin install pubmed@life-sciences`
+- For anything not covered by an official plugin, use `/mcp-maker` or ask Claude to invoke the skill.
+
+---
+
 ## Usage economy — stretching a Pro account
 
 This setup runs on a Claude Pro subscription, not unlimited API.
@@ -161,7 +193,19 @@ This setup runs on a Claude Pro subscription, not unlimited API.
 - **Subagents for isolation**: For self-contained tasks (code simplification, test generation from a spec), prefer spawning a subagent over extending the main session. The subagent runs in its own context and doesn't carry the main session's history.
 - **Front-load context in files, not conversation**: Reference `CLAUDE.md`, `CONTEXT.md`, `HANDOFF.md` rather than re-explaining constraints conversationally.
 
-### Model routing *[OPERATOR NOTES]*
+### Guardrail alerts *[AGENT RULES]*
+
+Proactively warn the user when you detect any of the following. Do not wait to be asked — flag it inline, briefly, as it comes up.
+
+| Signal | What to say |
+|---|---|
+| **Context bloat** | "Heads up — this session is getting long (~N turns). Want me to write a HANDOFF.md and start fresh?" |
+| **Token-heavy output** | Before running a command that will produce large stdout (>100 lines), ask: "This will dump a lot of output. Want me to truncate or summarise instead?" |
+| **Scope creep** | If a single prompt is asking for 3+ loosely related things: "This is turning into multiple tasks. Want me to batch them, or should we do them one at a time so I can verify each?" |
+| **Complexity escalation** | If a file is exceeding ~300 lines, or a function exceeds ~50 lines, or a plan has >8 steps: "This is getting complex. Want me to break it into smaller pieces / use a subagent / simplify the design?" |
+| **Stability risk** | Before making a change that could break the pipeline or an existing test suite: "This touches [X critical path]. I'll run verification before and after — just flagging the risk." |
+| **Resource limits** | Before recommending a tool or operation that will stress 16 GB RAM (large model load, big join, full-genome indexing): "This may push memory. Here's a lighter alternative: [X]. Want to try that first?" |
+| **Diminishing returns** | If a debug loop has gone >3 iterations without progress: "We've been circling on this. Want me to re-plan from scratch, or should we write up what we know in HANDOFF.md and come back fresh?" |
 
 - **Opus for thinking**: Plan mode, architecture decisions, debugging subtle biology/stats, reviewing scientific soundness, writing CLAUDE.md rules.
 - **Sonnet for doing**: Executing a locked plan, boilerplate generation, scaffolding, writing tests from a spec, refactoring, docstrings, git operations. Switch with `/model sonnet` mid-session.

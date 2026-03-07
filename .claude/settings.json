@@ -1,38 +1,49 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run build:*)",
-      "Bash(npm run lint:*)",
-      "Bash(npm run test:*)",
-      "Bash(npm run typecheck:*)",
-      "Bash(npm test:*)",
-      "Bash(npm run format:*)",
-      "Bash(npm run dev:*)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git branch:*)",
-      "Bash(git checkout:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(git pull:*)",
-      "Bash(git fetch:*)",
-      "Bash(gh pr:*)",
-      "Bash(gh issue:*)",
-      "Bash(ls:*)",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(conda:*)",
+      "Bash(mamba:*)",
+      "Bash(pip:*)",
+      "Bash(uv:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(mypy:*)",
+      "Bash(nextflow:*)",
+      "Bash(snakemake:*)",
+      "Bash(docker:*)",
+      "Bash(colima:*)",
+      "Bash(samtools:*)",
+      "Bash(bcftools:*)",
+      "Bash(bedtools:*)",
+      "Bash(minimap2:*)",
+      "Bash(bwa-mem2:*)",
       "Bash(cat:*)",
-      "Bash(find:*)",
-      "Bash(grep:*)",
       "Bash(head:*)",
       "Bash(tail:*)",
       "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(sort:*)",
+      "Bash(cut:*)",
+      "Bash(awk:*)",
+      "Bash(sed:*)",
       "Bash(mkdir:*)",
-      "Bash(touch:*)",
-      "Bash(node:*)",
-      "Bash(npx:*)"
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(echo:*)",
+      "Bash(claude:*)"
     ],
-    "deny": []
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(sudo:*)",
+      "Bash(chmod 777:*)"
+    ]
   },
   "hooks": {
     "PostToolUse": [
@@ -41,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npm run format 2>/dev/null || npx prettier --write \"$CLAUDE_FILE_PATH\" 2>/dev/null || true"
+            "command": "ruff format --quiet $CLAUDE_FILE_PATH 2>/dev/null || true"
           }
         ]
       }
