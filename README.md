@@ -1,3 +1,5 @@
+FORK ADAPTED FOR MY USE
+
 # Boris Cherny's Claude Code Setup
 
 This repository contains a Claude Code configuration based on [Boris Cherny's X thread](https://x.com/bcherny/status/2007179832300581177) about how he uses Claude Code.
