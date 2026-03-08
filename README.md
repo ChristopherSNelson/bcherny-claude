@@ -1,155 +1,160 @@
-FORK ADAPTED FOR MY USE
+# Claude Code Setup for Bioinformatics & ML/AI in Biopharma
 
-# Boris Cherny's Claude Code Setup
+> Forked from [0xquinto/bcherny-claude](https://github.com/0xquinto/bcherny-claude), which reconstructed
+> [Boris Cherny's](https://x.com/bcherny/status/2007179832300581177) Claude Code configuration.
+> Boris is the creator of Claude Code at Anthropic.
 
-This repository contains a Claude Code configuration based on [Boris Cherny's X thread](https://x.com/bcherny/status/2007179832300581177) about how he uses Claude Code.
+This fork adapts the setup for computational biology and ML/AI work in biopharma,
+running on an Apple Silicon MacBook with a Claude Pro subscription.
 
-Boris is the creator of Claude Code at Anthropic, and this setup reflects his personal workflow.
+---
 
-## What's Included
+## What changed from the original
+
+| Area | Original (Boris) | This fork |
+|------|-------------------|-----------|
+| **Target domain** | General TypeScript/web dev | Bioinformatics pipelines, ML for life sciences |
+| **Hardware** | Unlimited (Anthropic internal) | M1 Pro, 16 GB RAM — memory-aware rules |
+| **Account** | Internal/unlimited | Claude Pro — usage economy section, Opus/Sonnet routing |
+| **CLAUDE.md voice** | Mixed human/agent | Split: `[AGENT RULES]` (for Claude) vs `[OPERATOR NOTES]` (for you) |
+| **Slash commands** | Documented as Claude-callable | Correctly marked as user-invoked only |
+| **MCP servers** | Not addressed | On-demand creation via `mcp-maker` skill, no preloaded MCPs |
+| **Verification loop** | `npm test / typecheck / lint` | `pytest / ruff / mypy / nextflow -profile test` |
+| **Guardrails** | Not present | Claude proactively warns about context bloat, scope creep, memory limits |
+
+## What's included
 
 ### CLAUDE.md
 
-Project-specific instructions that Claude reads on startup. Update this file whenever Claude makes a mistake so it learns not to repeat it.
+The main config file Claude reads on startup. Sections cover:
 
-### Slash Commands (`.claude/commands/`)
+- **Environment constraints** — ARM/Apple Silicon awareness, 16 GB memory discipline, Docker rules
+- **`.claude/` directory manifest** — Documents everything in the config directory so Claude knows what's available
+- **Domain rules** — Bioinformatics (file formats, genome builds, tool preferences) and ML/AI (PyTorch/MPS, model size limits, data leakage prevention)
+- **Coding standards** — Python, R, Nextflow/Snakemake conventions
+- **Verification loops** — What Claude must run before declaring a task complete
+- **Workflow philosophy** — Plan-first approach, handoff discipline, subagent guidelines
+- **Biopharma context** — Audience calibration, therapeutic mechanism precision, HIPAA/GxP defaults
+- **MCP server policy** — On-demand creation, no preloaded overhead
+- **Usage economy** — Token-saving rules, Opus/Sonnet model routing, session management
+- **Guardrail alerts** — Claude proactively flags context bloat, complexity, resource limits, diminishing returns
+- **Mistakes log** — Append-only log of corrections (Claude proposes entries)
+- **Project-specific overrides** — Fill in per-project (genome build, workflow engine, primary language)
 
-| Command           | Description                                             |
-| ----------------- | ------------------------------------------------------- |
-| `/commit-push-pr` | Commit, push, and open a PR                             |
-| `/quick-commit`   | Stage all changes and commit with a descriptive message |
-| `/test-and-fix`   | Run tests and fix any failures                          |
-| `/review-changes` | Review uncommitted changes and suggest improvements     |
-| `/worktree`       | Create a git worktree for parallel Claude sessions      |
-| `/grill`          | Adversarial code review — don't ship until it passes    |
-| `/techdebt`       | End-of-session sweep for duplicated and dead code       |
+### Slash commands (`.claude/commands/`)
+
+User-invoked shortcuts. Claude cannot call these — it suggests them by name when relevant.
+
+| Command | Description |
+|---------|-------------|
+| `/commit-push-pr` | Commit, push, and open a PR |
+| `/quick-commit` | Stage all changes and commit with a descriptive message |
+| `/test-and-fix` | Run tests and fix any failures |
+| `/review-changes` | Review uncommitted changes and suggest improvements |
+| `/grill` | Adversarial code review |
+| `/techdebt` | Codebase cleanup |
+| `/worktree` | Set up git worktrees for parallel sessions |
 
 ### Subagents (`.claude/agents/`)
 
-| Agent             | Purpose                                                      |
-| ----------------- | ------------------------------------------------------------ |
-| `code-simplifier` | Simplify code after Claude is done working                   |
-| `code-architect`  | Design reviews and architectural decisions                   |
-| `verify-app`      | Thoroughly test the application works correctly              |
-| `build-validator` | Ensure project builds correctly for deployment               |
-| `oncall-guide`    | Help diagnose and resolve production issues                  |
-| `staff-reviewer`  | Review plans and architectures as a skeptical staff engineer |
+Claude can delegate to these. Limited to 1 concurrent on this machine.
+
+| Agent | Purpose |
+|-------|---------|
+| `code-simplifier` | Simplify and clean up code after implementation |
+| `code-architect` | Design reviews and architectural decisions |
+| `verify-app` | Thorough end-to-end testing |
+| `build-validator` | Ensure project builds for deployment |
+| `oncall-guide` | Diagnose and resolve production issues |
+
+### Skills (`.claude/skills/`)
+
+| Skill | Purpose |
+|-------|---------|
+| `mcp-maker` | Scaffold, register, and test a new MCP server on demand. Includes a FastMCP template and step-by-step workflow. |
+
+### MCP servers (`.claude/mcp-servers/`)
+
+Empty on clone. This is where `mcp-maker` puts the servers it creates. Commit reusable ones, delete disposable ones.
 
 ### Settings (`.claude/settings.json`)
 
-- **Pre-allowed permissions**: Common safe commands (npm, git, gh, etc.) won't prompt for approval
-- **PostToolUse hook**: Auto-formats code after Write/Edit operations
+Pre-allowed permissions for the bioinformatics CLI stack (`git`, `conda`, `samtools`, `bcftools`, `nextflow`, `docker`, etc.) and a PostToolUse hook that runs `ruff format` on any Python file Claude writes.
 
-## Tips from the Claude Code Team
+---
 
-Based on [Boris Cherny's thread (Jan 2026)](https://x.com/bcherny/status/2017742741636321619) sharing tips sourced directly from the Claude Code team.
+## Prerequisites
 
-### Parallelism
+Install these before using:
 
-- Run 3-5 Claude sessions in parallel using git worktrees
-- Use subagents to throw more compute at problems
-- Offload tasks to subagents to keep your main context clean
-- Route permission requests to Opus 4.5 via a hook to auto-approve safe ones
+```bash
+# Required
+brew install uv               # Python package runner (needed for mcp-maker)
+brew install ruff              # Python linter/formatter (used by settings.json hook)
+brew install gh                # GitHub CLI (used by /commit-push-pr)
 
-### Planning
-
-- Start complex tasks in plan mode (shift+tab)
-- When things go sideways, re-plan instead of pushing through
-- Use plan mode for verification steps, not just builds
-
-### Configuration
-
-- Invest in your CLAUDE.md — update it after every mistake
-- Create reusable skills and commit them to git
-- Use /statusline to show context usage and git branch
-- Color-code and name terminal tabs, one per task/worktree
-
-### Prompting
-
-- Challenge Claude: "Grill me on these changes"
-- Demand proof: "Prove to me this works"
-- Reset mediocre work: "Scrap this, implement the elegant solution"
-- Write detailed specs to reduce ambiguity
-
-### Workflow
-
-- Paste Slack bug threads and just say "fix"
-- Say "Go fix the failing CI tests" — don't micromanage how
-- Point Claude at docker logs to troubleshoot distributed systems
-- Use Claude for analytics — works with any database CLI, MCP, or API
-
-### Learning
-
-- Enable "Explanatory" output style in /config to learn the _why_
-- Have Claude generate visual HTML presentations for unfamiliar code
-- Ask Claude to draw ASCII diagrams of protocols and codebases
-- Use voice dictation (fn x2 on macOS) — you speak 3x faster than you type
-
-### Terminal
-
-- The team recommends Ghostty for its synchronized rendering and unicode support
-
-## How to Use This Repo
-
-### Option 1: Copy to Your Project
-
-Copy the `.claude/` folder and `CLAUDE.md` to the root of your existing project:
-
-```sh
-cp -r /path/to/bcherny-claude/.claude /path/to/your-project/
-cp /path/to/bcherny-claude/CLAUDE.md /path/to/your-project/
+# Your bioinformatics stack (install as needed)
+# conda/mamba, nextflow, docker, samtools, bcftools, bedtools, etc.
 ```
 
-### Option 2: Use as a Template
+## Quick start
 
-Clone this repo and use it as a starting point for a new project:
+### Use as a template for a new project
 
-```sh
-git clone <this-repo> my-new-project
-cd my-new-project
-rm -rf .git
+```bash
+cp -r ~/bcherny-claude/.claude ~/my-new-project/
+cp ~/bcherny-claude/CLAUDE.md ~/my-new-project/
+cd ~/my-new-project
 git init
+# Edit the "Project-specific overrides" section at the bottom of CLAUDE.md
+claude
 ```
 
-### Option 3: Cherry-pick What You Need
+### Add to an existing project
 
-Copy only specific files you want:
-
-- Just want slash commands? Copy `.claude/commands/`
-- Just want subagents? Copy `.claude/agents/`
-- Just want permissions? Copy `.claude/settings.json`
-
-### After Setup
-
-1. **Customize CLAUDE.md** for your project's tech stack, conventions, and workflow
-2. **Edit settings.json** to match your project's commands (e.g., `bun` instead of `npm`)
-3. **Run Claude Code** in your project directory - it will automatically read the config
-
-### Using the Commands
-
-In Claude Code, type `/` to see available commands:
-
-```
-/commit-push-pr     # Full git workflow
-/quick-commit       # Fast commit
-/test-and-fix       # Run and fix tests
-/review-changes     # Code review
-/worktree           # Parallel Claude sessions
-/grill              # Adversarial code review
-/techdebt           # Codebase cleanup
+```bash
+cd ~/my-existing-project
+cp -r ~/bcherny-claude/.claude .
+cp ~/bcherny-claude/CLAUDE.md .
+# Edit project-specific overrides
+claude
 ```
 
-### Using Subagents
+### Shell alias (optional)
 
-Ask Claude to use a subagent:
+Add to `~/.zshrc`:
 
-```
-"Use the code-simplifier agent to clean up the code I just wrote"
-"Run the verify-app agent to test everything works"
-"Use code-architect to review this design"
+```bash
+alias new-claude-project='f() { mkdir -p "$1" && cd "$1" && git init && cp -r ~/bcherny-claude/.claude . && cp ~/bcherny-claude/CLAUDE.md . && echo "Ready. Edit CLAUDE.md project overrides, then run: claude"; }; f'
 ```
 
-## Sources
+Then: `new-claude-project my-methylation-pipeline`
 
-- Original setup: https://x.com/bcherny/status/2007179832300581177
-- Team tips (Jan 2026): https://x.com/bcherny/status/2017742741636321619
+## Tips for daily use
+
+**You don't need to explain the setup to Claude.** It reads `CLAUDE.md` automatically on startup. Just describe your task.
+
+**Use Opus for planning, Sonnet for execution.** Start in plan mode (shift+tab twice), iterate on the plan, then switch to Sonnet (`/model sonnet`) for auto-accept execution. This stretches your Pro account 3–5x.
+
+**Start fresh often.** After ~15 turns, or when you finish a unit of work, ask Claude to write a `HANDOFF.md` and start a new session. Claude picks up from the handoff without re-paying for old context.
+
+**Let Claude warn you.** The guardrail alerts are there so Claude flags problems proactively — context bloat, memory pressure, scope creep, debug loops going nowhere. Trust the alerts.
+
+**Install the life sciences plugins if you want them:**
+
+```bash
+# In Claude Code
+/plugin marketplace add anthropics/life-sciences
+/plugin install pubmed@life-sciences
+/plugin install nextflow-development@life-sciences
+```
+
+**Update CLAUDE.md when Claude makes mistakes.** End corrections with: "Now update CLAUDE.md so you don't make that mistake again." This is the single highest-leverage habit.
+
+---
+
+## Original source
+
+Based on: [Boris Cherny's X thread](https://x.com/bcherny/status/2007179832300581177) via [0xquinto/bcherny-claude](https://github.com/0xquinto/bcherny-claude)
+
+Anthropic life sciences marketplace: [anthropics/life-sciences](https://github.com/anthropics/life-sciences)
