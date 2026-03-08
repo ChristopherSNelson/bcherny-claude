@@ -99,23 +99,39 @@ brew install gh                # GitHub CLI (used by /commit-push-pr)
 
 ## Quick start
 
-### Use as a template for a new project
+### One-time setup: clone the fork as a template source
 
 ```bash
-cp -r ~/bcherny-claude/.claude ~/my-new-project/
-cp ~/bcherny-claude/CLAUDE.md ~/my-new-project/
+git clone https://github.com/YOUR_USER/bcherny-claude.git ~/claude-template
+```
+
+Keep this as a read-only source. Never `cd` into it and work directly — never `rm -rf .git` inside it. You always copy *from* it into new projects.
+
+### Start a new project
+
+```bash
+mkdir ~/my-new-project
 cd ~/my-new-project
 git init
+git commit --allow-empty -m "init"
+cp -r ~/claude-template/.claude .
+cp ~/claude-template/CLAUDE.md .
+git add -A
+git commit -m "feat: add claude code config"
 # Edit the "Project-specific overrides" section at the bottom of CLAUDE.md
 claude
 ```
+
+The empty initial commit matters — Claude Code expects a valid git HEAD. Without it you can get cryptic startup errors.
 
 ### Add to an existing project
 
 ```bash
 cd ~/my-existing-project
-cp -r ~/bcherny-claude/.claude .
-cp ~/bcherny-claude/CLAUDE.md .
+cp -r ~/claude-template/.claude .
+cp ~/claude-template/CLAUDE.md .
+git add -A
+git commit -m "feat: add claude code config"
 # Edit project-specific overrides
 claude
 ```
@@ -125,7 +141,12 @@ claude
 Add to `~/.zshrc`:
 
 ```bash
-alias new-claude-project='f() { mkdir -p "$1" && cd "$1" && git init && cp -r ~/bcherny-claude/.claude . && cp ~/bcherny-claude/CLAUDE.md . && echo "Ready. Edit CLAUDE.md project overrides, then run: claude"; }; f'
+new-claude-project() {
+  mkdir -p "$1" && cd "$1" && git init && git commit --allow-empty -m "init" \
+    && cp -r ~/claude-template/.claude . && cp ~/claude-template/CLAUDE.md . \
+    && git add -A && git commit -m "feat: add claude code config" \
+    && echo "Ready. Edit CLAUDE.md project overrides, then run: claude"
+}
 ```
 
 Then: `new-claude-project my-methylation-pipeline`
