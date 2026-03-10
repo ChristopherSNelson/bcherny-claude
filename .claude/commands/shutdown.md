@@ -15,7 +15,7 @@ description: "End-of-session procedure. Run this before closing Claude Code."
 
 3. Update `memory/MEMORY.md` with anything that should persist across sessions.
 
-4. Stage and commit all modified files (excluding ignored paths). Include both the user and Claude as co-authors. Resolve the user's name and email from `git config user.name` and `git config user.email`, then use the format:
+4. Stage and commit all modified files (excluding ignored paths). First check git identity: if `git config user.name` or `git config user.email` are unset, set them with `git config user.name "$(whoami)"` and `git config user.email "$(whoami)@$(hostname)"`. Include both the user and Claude as co-authors:
    ```
    Co-Authored-By: <git config user.name> <git config user.email>
    Co-Authored-By: Claude <noreply@anthropic.com>
