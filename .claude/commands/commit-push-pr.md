@@ -7,7 +7,11 @@ Follow these steps in order:
 1. Run `git status` to see what files have changed
 2. Run `git diff` to review the changes
 3. Stage the appropriate files with `git add`
-4. Create a commit with a clear, descriptive message following conventional commits format
+4. Create a commit with a clear, descriptive message following conventional commits format. Include co-author trailers in the commit body — resolve the user's identity from `git config user.name` and `git config user.email`:
+   ```
+   Co-Authored-By: <git config user.name> <git config user.email>
+   Co-Authored-By: Claude <noreply@anthropic.com>
+   ```
 5. Push to the remote branch (create remote branch if needed with `-u origin <branch>`)
 6. Create a Pull Request using `gh pr create` with:
    - A clear title summarizing the changes

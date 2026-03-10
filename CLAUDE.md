@@ -40,6 +40,8 @@ These are triggered by the user typing `/command-name` in the terminal. You cann
 | `/grill` | Adversarial code review — stress-tests the implementation. |
 | `/techdebt` | Scans for and proposes cleanup of technical debt. |
 | `/worktree` | Sets up git worktrees for parallel Claude sessions. |
+| `/shutdown` | End-of-session procedure: writes HANDOFF.md, updates memory, commits, and pushes. |
+| `/push` | Push current branch to origin (no PR). |
 
 When suggesting a workflow to the user, reference these by name (e.g., "you could run `/test-and-fix` now"). Do not attempt to execute them as bash commands.
 
@@ -113,7 +115,11 @@ When setting up a new project, consider which commands and agents to keep, remov
 - **R**: Tidyverse style when in R. Use `renv` for dependency management.
 - **Nextflow/Snakemake**: Each process/rule should be independently testable. Parameterise reference paths and resource allocations — don't hardcode.
 - **No `any` in TypeScript** without explicit approval (keeping Boris's rule — relevant for any dashboard/viz work).
-- **Git**: Conventional commits (`feat:`, `fix:`, `refactor:`, `data:`, `pipeline:`). Feature branches off `main`. Squash-merge PRs.
+- **Git**: Conventional commits (`feat:`, `fix:`, `refactor:`, `data:`, `pipeline:`). Feature branches off `main`. Squash-merge PRs. All commits must include co-author trailers for both the user (resolved from `git config user.name` / `git config user.email`) and Claude (`Claude <noreply@anthropic.com>`).
+
+## Presentation style *[AGENT RULES]*
+
+- **No mid-sentence bold in written artifacts** (README.md, code comments, CLAUDE.md prose). Mid-sentence bold is fine in chat responses that don't write to a file.
 
 ---
 
@@ -153,7 +159,7 @@ Do not report a task as complete unless verification passes. If tests fail, fix 
 ## Biopharma context *[AGENT RULES]*
 
 - We work at the intersection of computational biology and drug discovery/development.
-- Audiences for our code and analyses include: bench scientists, translational researchers, clinical data scientists, and occasionally regulatory reviewers.
+- Audiences for our code and analyses include:  ML/AI bioinformaticians especially, bench scientists, translational researchers, clinical data scientists, and occasionally regulatory reviewers.
 - Documentation should be clear enough for a biologist to understand the methods section, and precise enough for a bioinformatician to reproduce.
 - When discussing mRNA, immunotherapy, or any therapeutic modality — be precise about mechanism. Don't conflate checkpoint inhibitors with CAR-T with bispecifics with ADCs. Get the biology right.
 - For anything touching patient data or clinical datasets: assume HIPAA/GxP constraints apply. Never log PHI. Use synthetic or de-identified data for development.

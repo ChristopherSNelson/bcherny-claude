@@ -10,4 +10,10 @@ description: "Stage all changes and commit with a descriptive message"
    - Briefly describes what changed
    - Uses imperative mood ("Add feature" not "Added feature")
 
+5. Include co-author trailers in the commit body. Resolve the user's identity from `git config user.name` and `git config user.email`:
+   ```
+   Co-Authored-By: <git config user.name> <git config user.email>
+   Co-Authored-By: Claude <noreply@anthropic.com>
+   ```
+
 Example: `feat: add product search functionality`
