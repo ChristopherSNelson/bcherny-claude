@@ -20,6 +20,7 @@
 - **ARM/Apple Silicon awareness**: Default to `osx-arm64` / `linux-aarch64` for conda, Docker `--platform linux/arm64`, and `tensorflow-macos` / `tensorflow-metal` when TF is needed. Before recommending any pip/conda package, verify it has an ARM-native wheel. Flag Rosetta fallbacks explicitly.
 - **Memory discipline**: Before recommending a tool or approach, estimate peak memory. Prefer streaming/chunked I/O (e.g., `pysam`, `dask`, `polars`) over full in-memory loads. If a dataset exceeds ~6 GB on disk, propose a chunked or out-of-core strategy before writing code.
 - **Docker**: Assume `colima` or Docker Desktop for Mac. Pin `--platform linux/arm64` in Dockerfiles. Keep images slim — no CUDA layers unless the user specifies a remote GPU target.
+- **macOS CLI gotchas**: `zcat file.gz` silently produces empty output on macOS (it expects `.Z` files, not `.gz`); always use `gzip -dc` instead. `find -size -1M` behaves differently on BSD vs GNU — BSD `find` treats the unit as 512-byte blocks, not bytes; use explicit byte comparisons or `awk` on `ls -l` output when filtering by file size.
 
 ---
 
@@ -212,6 +213,7 @@ Proactively warn the user when you detect any of the following. Do not wait to b
 | **Stability risk** | Before making a change that could break the pipeline or an existing test suite: "This touches [X critical path]. I'll run verification before and after — just flagging the risk." |
 | **Resource limits** | Before recommending a tool or operation that will stress 16 GB RAM (large model load, big join, full-genome indexing): "This may push memory. Here's a lighter alternative: [X]. Want to try that first?" |
 | **Diminishing returns** | If a debug loop has gone >3 iterations without progress: "We've been circling on this. Want me to re-plan from scratch, or should we write up what we know in HANDOFF.md and come back fresh?" |
+| **Destructive deletion** | Before `rm -rf` on any directory containing results, outputs, or user-created files: confirm explicitly. User messages may arrive mid-execution and the operation is irreversible. Prefer `mv` to a temp location when content value is unclear. Never delete `*.key`, `*.pptx`, `*.pdf`, `*.pages` without explicit instruction. |
 
 - **Opus for thinking**: Plan mode, architecture decisions, debugging subtle biology/stats, reviewing scientific soundness, writing CLAUDE.md rules.
 - **Sonnet for doing**: Executing a locked plan, boilerplate generation, scaffolding, writing tests from a spec, refactoring, docstrings, git operations. Switch with `/model sonnet` mid-session.
