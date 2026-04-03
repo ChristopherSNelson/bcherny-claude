@@ -52,6 +52,7 @@ User-invoked shortcuts. Claude cannot call these — it suggests them by name wh
 | `/test-and-fix` | Run tests and fix any failures |
 | `/review-changes` | Review uncommitted changes and suggest improvements |
 | `/grill` | Adversarial code review |
+| `/biogrill` | Adversarial biological code review - challenges every biological assumption (magic numbers, coordinate systems, assay artifacts, normalization, filtering logic, identifier consistency). Rates each assumption VALID/QUESTIONABLE/WRONG. |
 | `/techdebt` | Codebase cleanup |
 | `/worktree` | Set up git worktrees for parallel sessions |
 
