@@ -3,8 +3,14 @@ Adversarial biological code review. Don't let me ship until the science passes s
 Steps:
 
 1. Determine the base branch (main or master)
-2. Run `git diff <base>...HEAD` to see all changes on this branch
-3. For every changed line that encodes a biological assumption, challenge it across
+2. Run `git diff <base>...HEAD` to see all changed code
+3. Read all .md planning files in the repo (SPRINT_PLAN.md, HANDOFF.md, any biogrill_*.md,
+   any docs/*.md). These encode biological decisions, planned experiments, and implementation
+   choices that are just as load-bearing as the code itself.
+
+── PART A: CODE REVIEW ─────────────────────────────────────────────────────────
+
+4. For every changed line that encodes a biological assumption, challenge it across
    these categories:
 
    Magic numbers and thresholds
@@ -41,7 +47,7 @@ Steps:
    - Are filters applied in an order that could introduce bias (e.g. filtering on
      one modality before the other changes the composition of both)?
    - Are low-expression filters depth-aware, or do they use absolute count cutoffs
-       that become incorrect at different sequencing depths?
+     that become incorrect at different sequencing depths?
 
    Identifiers and annotation
    - Are gene/transcript IDs from the same annotation release throughout?
@@ -50,20 +56,78 @@ Steps:
    - Are multi-transcript genes handled at the right level of resolution for the
      biological question?
 
-4. Rate each biological assumption: VALID / QUESTIONABLE / WRONG
-   - VALID: supported by the protocol, literature, or dataset metadata
-   - QUESTIONABLE: plausible but undocumented; needs a comment or assertion
-   - WRONG: contradicts known biology or is inconsistent with the stated protocol
+── PART B: PLAN REVIEW ──────────────────────────────────────────────────────────
 
-5. Rate the changeset overall: SHIP IT / NEEDS COMMENT / NEEDS FIX / BLOCK
-   - SHIP IT: all assumptions valid or documented
-   - NEEDS COMMENT: valid assumptions but not obvious to future readers
-   - NEEDS FIX: a QUESTIONABLE assumption is load-bearing and unguarded
-   - BLOCK: a WRONG assumption will silently corrupt results
+5. For every planned step, proposed method, and stated biological rationale in the
+   .md files, challenge it across these categories:
 
-6. List every QUESTIONABLE or WRONG finding with: file, line, assumption, and
-   what evidence or guard would resolve it
+   Biological legitimacy of the approach
+   - Does the proposed method actually measure or control what it claims to?
+     (e.g. "stall detection removes artifacts" - does stall detection truly separate
+     biological pausing from technical artifacts, or does it remove both?)
+   - Are the biological assumptions underlying each filter or normalization step
+     consistent with what is known about the assay and organism?
+   - Are the stated biological goals (e.g. "reduce TE outliers") actually achieved
+     by the planned methods, or could confounders remain?
+   - Are planned threshold values (wherever stated in prose) cited to literature,
+     derived from data, or just asserted? Flag all "we will use X" without a source.
 
-7. After fixes or comments are added, re-review from step 1
-8. Only give SHIP IT when every assumption is either validated or explicitly
-   documented with its justification and known limitations
+   Implementation rigor of the plan
+   - Is each planned step specific enough that two engineers would implement it the
+     same way? Vague steps like "validate the output" or "check the results" are not
+     plans - flag them.
+   - Are edge cases named? (e.g. genes with all isoforms removed, zero-depth
+     transcripts, single-replicate cell types)
+   - Are failure modes and their handling specified? What happens when a step
+     produces unexpected output?
+   - Are dependencies between steps made explicit? Can step N start before step N-1
+     is fully validated, or does it assume N-1 is correct?
+   - Are compute/memory requirements stated where they are non-trivial?
+
+   Consistency between code and plan
+   - Does the implemented code actually match what the plan says? Read both.
+   - Are there planned steps that are documented as DONE but where the implementation
+     is incomplete, approximate, or different from the plan spec?
+   - Are there code behaviors (e.g. defaults, sentinel management, fallback logic)
+     that are not reflected in the plan documentation?
+   - Are stated blockers real blockers, or have they been resolved in code but not
+     updated in the plan?
+
+   Scientific validity of deferred decisions
+   - For items marked "calibrate later" or "threshold TBD": what is the plan for
+     actually calibrating them? Is the calibration approach sound?
+   - For deferred tasks: is deferral scientifically safe, or does it mean the
+     pipeline is currently running with an unvalidated assumption?
+   - Are stretch goals or "nice to have" items clearly separated from items that
+     are required for scientific validity of the output?
+
+── RATINGS ──────────────────────────────────────────────────────────────────────
+
+6. Rate each finding:
+   - Code assumptions: VALID / QUESTIONABLE / WRONG
+     - VALID: supported by the protocol, literature, or dataset metadata
+     - QUESTIONABLE: plausible but undocumented; needs a comment or assertion
+     - WRONG: contradicts known biology or is inconsistent with the stated protocol
+   - Plan elements: SOUND / QUESTIONABLE / FLAWED
+     - SOUND: specific, biologically justified, internally consistent
+     - QUESTIONABLE: vague, uncited, or relies on an unvalidated assumption
+     - FLAWED: the approach cannot achieve its stated goal, or a deferred calibration
+       is blocking scientific validity right now
+
+7. Rate the overall changeset + plan state: SHIP IT / NEEDS COMMENT / NEEDS FIX / BLOCK
+   - SHIP IT: all code assumptions valid or documented; all plan steps specific and sound
+   - NEEDS COMMENT: valid/sound but not obvious to future readers
+   - NEEDS FIX: a QUESTIONABLE assumption or plan element is load-bearing and unguarded
+   - BLOCK: a WRONG code assumption or FLAWED plan element will silently corrupt results
+     or produce scientifically invalid output
+
+8. List every QUESTIONABLE/WRONG/FLAWED finding with:
+   - File and line (or plan section)
+   - The assumption or plan element
+   - Why it is questionable/wrong/flawed
+   - What evidence, guard, or specificity would resolve it
+
+9. After fixes or comments are added, re-review from step 1
+10. Only give SHIP IT when every assumption is either validated or explicitly
+    documented with its justification and known limitations, AND every plan step
+    is specific enough to implement correctly
