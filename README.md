@@ -180,3 +180,7 @@ Then: `new-claude-project my-methylation-pipeline`
 Based on: [Boris Cherny's X thread](https://x.com/bcherny/status/2007179832300581177) via [0xquinto/bcherny-claude](https://github.com/0xquinto/bcherny-claude)
 
 Anthropic life sciences marketplace: [anthropics/life-sciences](https://github.com/anthropics/life-sciences)
+
+---
+## LICENSE
+MIT
